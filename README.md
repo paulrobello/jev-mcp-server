@@ -1,0 +1,60 @@
+# jev-mcp-server
+
+MCP server exposing the Jev decision tools — [ten-levels-of-jev](https://github.com/paulrobello/ten-levels-of-jev) levels 8–10 as MCP tools for Claude Code (and any MCP client). Code reads the files, Jev judges them, and nothing enters the agent's context: one call ≈ 300 ms, fractions of a cent.
+
+## Tools
+
+| Tool | What it does |
+|---|---|
+| `ask_jev` | One Jev call over an assembled situation: short own state, up to 20 files code reads, and/or one **gated** read-only command's output. Typed answers back (noul / choice / score). |
+| `ask_jev_files` | The same question block over many files — one Jev call per file, in parallel (cap 255). Answers per path; oversized/binary files come back in `skipped` with reasons. |
+| `pick_first_file` | Second pass after `ask_jev_files`: which of a candidate list to open first, as a Choice keyed by path. |
+| `ask_jev_file_bool` / `_choice` / `_score` | One file, one typed question each (probability of yes, pick an option, position on a 2–10 level scale). |
+
+Claude Code has no pi hooks here, so `ask_jev`'s `command` runs through the level 6 bash gate **inside the tool** (irreversible/destructive commands refuse; the gate fails closed after ~5 s) instead of a harness hook. The compaction tools (`should_i_compact` / `compact_now`) from the omp extension do not port — Claude Code exposes no compaction API — and are deliberately absent.
+
+## Backend
+
+Calls default to the local [cc-router](https://github.com/paulrobello/cc-router) relay (`http://127.0.0.1:8792/v1/systemone`): cc-router owns the OpenRouter auth, logging, and stats — no key is needed on this side. Every call emits a `JEV_EVENT` JSON line on the server's stderr.
+
+| Variable | Effect |
+|---|---|
+| *(none set)* | Relay through cc-router. If cc-router is down, calls error — no silent mock. |
+| `JEV_ENDPOINT` | Relay at this URL instead (same convention as jev-router). Wins over `OPENROUTER_API_KEY`. |
+| `JEV_BACKEND` | `mock` (offline, no key) or `openrouter` (direct with the ambient key). Wins over everything. |
+| `OPENROUTER_API_KEY` | Direct OpenRouter with this key. |
+| `JEV_OPENROUTER_KEY` | Bearer for the relay path (default: `~/.config/jev/key`, else an inert placeholder). |
+
+## Install (Claude Code, user scope)
+
+```bash
+claude mcp add -s user jev-mcp-server -- bun /Users/probello/Repos/jev-mcp-server/src/index.ts
+```
+
+The `ask-jev` skill (when to prefer which tool, how to write criteria, the `skipped` discipline) lives in `skills/ask-jev/` — symlink it into `~/.claude/skills/`:
+
+```bash
+ln -s /Users/probello/Repos/jev-mcp-server/skills/ask-jev ~/.claude/skills/ask-jev
+```
+
+## Develop
+
+```bash
+bun install
+make checkall   # fmt-check + lint + typecheck + test
+make test       # in-memory MCP client over the offline mock backend, no key, no network
+```
+
+## Layout
+
+- `src/index.ts` — the server: six tools over the vendored level code.
+- `src/jev.ts` — the decide wrapper: env-resolved client (cc-router relay default), JEV_EVENT reporting, guard timeout.
+- `src/jev/` — vendored from ten-levels-of-jev `apps/ten-levels` (commit `2b584a5`): `core/`, `decide.ts`, `levels/level06`–`level10`. Re-copy from there to update; do not edit. Excluded from biome (vendored formatting).
+
+### TypeScript note
+
+`registerTool`'s generics (ShapeOutput over zod 3.25's dual v3/v4 compat types) exceed TS 5.9's instantiation depth at every call site, so `src/index.ts` erases them behind a small adapter (`register` + `shape`) with `object`-typed schemas. Runtime validation is unchanged: the SDK parses arguments against the zod shape, and the level functions validate their own inputs.
+
+## License
+
+MIT
