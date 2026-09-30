@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "jev-mcp-server",
+      "name": "systemone-mcp-server",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.0.0",
         "zod": "^3.25.0",

@@ -1,7 +1,7 @@
 {
-  "name": "jev-mcp-server",
+  "name": "systemone-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server exposing the Jev decision tools (ask_jev, ask_jev_files, pick_first_file, ask_jev_file_*) — typed noul/choice/score questions over files and state without reading them into context",
+  "description": "MCP server exposing the System One decision tools (ask_systemone, ask_systemone_files, pick_first_file, ask_systemone_file_*) — typed noul/choice/score questions over files and state without reading them into context",
   "license": "MIT",
   "private": true,
   "type": "module",

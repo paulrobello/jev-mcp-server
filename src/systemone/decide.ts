@@ -1,6 +1,6 @@
 /**
  * Shared: the decision seam every injectable level agrees on, and the parser
- * for the raw Jev question JSON the agent-side levels accept. Declared once
+ * for the raw System One question JSON the agent-side levels accept. Declared once
  * here so levels 6, 8, 9, and 10 cannot drift apart.
  */
 import { validateQuestions, type Answer, type Questions, type State } from "./core/types.ts";
@@ -15,7 +15,7 @@ export type Decide = (
   model?: string;
 }>;
 
-/** The agent writes Jev's question shape as JSON. Malformed blocks fail here, with the reason, before any file is read. */
+/** The agent writes System One's question shape as JSON. Malformed blocks fail here, with the reason, before any file is read. */
 export function parseQuestions(questionsJson: string): Questions {
   let parsed: unknown;
   try {

@@ -1,8 +1,8 @@
 /**
- * Level 9, option A: ask_jev_files.
- * The same questions, raw Jev question JSON, over many files. One call per file, every question in each, all in parallel with a cap. Answers come back per path. No file enters the agent's context.
+ * Level 9, option A: ask_systemone_files.
+ * The same questions, raw System One question JSON, over many files. One call per file, every question in each, all in parallel with a cap. Answers come back per path. No file enters the agent's context.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import type { Answer } from "../../core/types.ts";
 import { type Decide, parseQuestions } from "../../decide.ts";
 import { FileStateError, readFileState } from "../level08/read-state.ts";
@@ -51,7 +51,7 @@ export async function askFiles(
   } = {},
 ): Promise<AskFilesResult> {
   const questions = parseQuestions(questionsJson);
-  const decide = opts.decide ?? ((s, q) => jev.systemOne(s, q));
+  const decide = opts.decide ?? ((s, q) => systemOneClient.systemOne(s, q));
   const expanded = await expandPatterns(patterns, cwd, opts.recursive ?? false);
   const { files, skipped } = await pruneFiles(expanded, cwd);
   const results: FileAnswers[] = [];

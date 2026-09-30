@@ -1,5 +1,5 @@
 /**
- * MockJev — a deterministic, offline stand-in for the real System One endpoint.
+ * MockSystemOne — a deterministic, offline stand-in for the real System One endpoint.
  *
  * It exists so every level in this codebase runs (and its tests pass) without an
  * API key. It mimics the exact wire contract: typed answers, probability
@@ -299,7 +299,7 @@ function scoreAnswer(q: ScoreQuestion, stateTokens: Set<string>): Answer {
   };
 }
 
-export class MockJev {
+export class MockSystemOne {
   readonly model = "jev-1.13.0-mock";
 
   systemOne(req: SystemOneRequest): SystemOneResponse {

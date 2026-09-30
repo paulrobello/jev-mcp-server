@@ -1,6 +1,6 @@
 /**
- * Level 8, shared: the file becomes Jev's state, never the agent's context.
- * Code reads it, refuses binaries and files over the budget, and hands back `{ path, content }`. Every ask_jev_file tool starts here.
+ * Level 8, shared: the file becomes System One's state, never the agent's context.
+ * Code reads it, refuses binaries and files over the budget, and hands back `{ path, content }`. Every ask_systemone_file tool starts here.
  */
 import { readFile, stat } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
@@ -37,7 +37,7 @@ export async function readFileState(path: string, cwd: string): Promise<FileStat
   if (!info.isFile()) throw new FileStateError(`not a file: ${path}`, path);
   if (info.size > MAX_FILE_CHARS) {
     throw new FileStateError(
-      `too large for one Jev call: ${path} is ${info.size} bytes, the limit is ${MAX_FILE_CHARS}`,
+      `too large for one System One call: ${path} is ${info.size} bytes, the limit is ${MAX_FILE_CHARS}`,
       path,
     );
   }

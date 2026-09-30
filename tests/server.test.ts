@@ -1,9 +1,9 @@
 /**
  * Server tests over an in-memory MCP client: the six tools list, and the main
- * paths round-trip on the offline mock backend (JEV_BACKEND=mock, no key, no
- * network). ask_jev's command gate is exercised with a benign command.
+ * paths round-trip on the offline mock backend (SYSTEMONE_BACKEND=mock, no key, no
+ * network). ask_systemone's command gate is exercised with a benign command.
  */
-process.env.JEV_BACKEND = "mock";
+process.env.SYSTEMONE_BACKEND = "mock";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -14,11 +14,11 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { buildServer } from "../src/index.ts";
 
 const TOOL_NAMES = [
-  "ask_jev",
-  "ask_jev_file_bool",
-  "ask_jev_file_choice",
-  "ask_jev_file_score",
-  "ask_jev_files",
+  "ask_systemone",
+  "ask_systemone_file_bool",
+  "ask_systemone_file_choice",
+  "ask_systemone_file_score",
+  "ask_systemone_files",
   "pick_first_file",
 ].sort();
 
@@ -30,7 +30,7 @@ beforeEach(async () => {
   const [clientT, serverT] = InMemoryTransport.createLinkedPair();
   await buildServer().connect(serverT);
   await client.connect(clientT);
-  fixture = mkdtempSync(join(tmpdir(), "jev-mcp-"));
+  fixture = mkdtempSync(join(tmpdir(), "systemone-mcp-"));
   writeFileSync(join(fixture, "a.ts"), "export const billing = () => 1;\n");
   writeFileSync(join(fixture, "b.ts"), "export const auth = () => 2;\n");
   writeFileSync(join(fixture, "big.txt"), "x".repeat(300_000));
@@ -39,15 +39,15 @@ beforeEach(async () => {
   process.chdir(fixture);
 });
 
-describe("jev-mcp-server", () => {
+describe("systemone-mcp-server", () => {
   test("lists the six tools", async () => {
     const { tools } = (await client.listTools()) as unknown as { tools: { name: string }[] };
     expect(tools.map((t) => t.name).sort()).toEqual(TOOL_NAMES);
   });
 
-  test("ask_jev_files answers per path and reports skipped files with reasons", async () => {
+  test("ask_systemone_files answers per path and reports skipped files with reasons", async () => {
     const r = await client.callTool({
-      name: "ask_jev_files",
+      name: "ask_systemone_files",
       arguments: {
         paths_or_globs: ["."],
         questions_json: JSON.stringify({
@@ -69,9 +69,9 @@ describe("jev-mcp-server", () => {
     expect(reasons["node_modules"]).toBe("skipped directory");
   });
 
-  test("ask_jev assembles state and returns typed answers", async () => {
+  test("ask_systemone assembles state and returns typed answers", async () => {
     const r = await client.callTool({
-      name: "ask_jev",
+      name: "ask_systemone",
       arguments: {
         questions_json: JSON.stringify({ u: { type: "noul", instructions: "Is `text` urgent?" } }),
         state: "the deploy failed at 3am",
@@ -86,9 +86,9 @@ describe("jev-mcp-server", () => {
     expect(payload.state_summary.tokens).toBeGreaterThan(0);
   });
 
-  test("ask_jev runs a benign gated command into the state", async () => {
+  test("ask_systemone runs a benign gated command into the state", async () => {
     const r = await client.callTool({
-      name: "ask_jev",
+      name: "ask_systemone",
       arguments: {
         questions_json: JSON.stringify({
           u: { type: "noul", instructions: "Is `text` a file listing?" },
@@ -102,9 +102,9 @@ describe("jev-mcp-server", () => {
     expect(payload.state_summary.output).toMatch(/^ls, exit 0/);
   });
 
-  test("ask_jev_file_bool answers and a missing file is an actionable error", async () => {
+  test("ask_systemone_file_bool answers and a missing file is an actionable error", async () => {
     const good = await client.callTool({
-      name: "ask_jev_file_bool",
+      name: "ask_systemone_file_bool",
       arguments: { path: "a.ts", question: "Does `content` mention billing?", yes: "it does" },
     });
     expect(good.isError).toBeFalsy();
@@ -115,7 +115,7 @@ describe("jev-mcp-server", () => {
     expect(payload.noul).toBeLessThanOrEqual(1);
 
     const bad = await client.callTool({
-      name: "ask_jev_file_bool",
+      name: "ask_systemone_file_bool",
       arguments: { path: "nope.ts", question: "?" },
     });
     expect(bad.isError).toBe(true);
@@ -138,7 +138,7 @@ describe("jev-mcp-server", () => {
 
   test("invalid questions_json fails before any file is read", async () => {
     const r = await client.callTool({
-      name: "ask_jev_files",
+      name: "ask_systemone_files",
       arguments: { paths_or_globs: ["."], questions_json: "{nope" },
     });
     expect(r.isError).toBe(true);

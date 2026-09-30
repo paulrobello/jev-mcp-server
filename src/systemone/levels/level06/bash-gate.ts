@@ -2,7 +2,7 @@
  * Level 6, option A: bash gate.
  * In the tool_call hook, before any bash command runs: what does it do to the machine, and does it mean to destroy something? Irreversible or destructive blocks. The agent only sees the reason.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import { choice, noul } from "../../core/helpers.ts";
 import type { ChoiceAnswer, NoulAnswer } from "../../core/types.ts";
 import type { Decide } from "../../decide.ts";
@@ -71,7 +71,7 @@ export function gateBash(a: BashGateAnswers, t: BashThresholds = BASH_THRESHOLDS
 export async function gateBashCommand(
   command: string,
   cwd: string,
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<GateDecision> {
   const { answers } = await decide({ command, cwd }, BASH_QUESTIONS);
   return gateBash(answers as unknown as BashGateAnswers);

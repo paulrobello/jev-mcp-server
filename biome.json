@@ -28,7 +28,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/jev/**"],
+      "includes": ["src/systemone/**"],
       "linter": {
         "enabled": false
       },

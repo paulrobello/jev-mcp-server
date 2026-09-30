@@ -1,8 +1,8 @@
 /**
- * Level 8, option B: ask_jev_file_choice.
+ * Level 8, option B: ask_systemone_file_choice.
  * One file, one pick from options the agent names. "Which layer is this file?" comes back as one of the agent's own keys, with the whole distribution.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import { choice } from "../../core/helpers.ts";
 import type { ChoiceAnswer } from "../../core/types.ts";
 import type { Decide } from "../../decide.ts";
@@ -22,7 +22,7 @@ export async function askFileChoice(
   question: string,
   options: Record<string, string>,
   cwd: string,
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<FileChoice> {
   const state = await readFileState(path, cwd);
   const criteria = { ...options };

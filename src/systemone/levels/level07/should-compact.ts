@@ -1,6 +1,6 @@
 /**
  * Level 7, option A: should I compact.
- * At the end of every agent turn, four questions about the work, one call. The numbers, context usage and the lines, stay in code. Jev judges whether the work moved on. The agent hears nothing, a notice, a recommendation, or a request.
+ * At the end of every agent turn, four questions about the work, one call. The numbers, context usage and the lines, stay in code. System One judges whether the work moved on. The agent hears nothing, a notice, a recommendation, or a request.
  */
 import { noul, score } from "../../core/helpers.ts";
 import type { NoulAnswer, ScoreAnswer } from "../../core/types.ts";

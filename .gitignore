@@ -21,3 +21,6 @@ tmp/
 # Build artifacts
 dist/
 node_modules/
+
+# Local git worktrees
+.worktrees/

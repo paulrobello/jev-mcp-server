@@ -1,10 +1,10 @@
 /**
- * JevClient — a provider and credential snapshot, with no runtime fallback.
+ * SystemOneClient — a provider and credential snapshot, with no runtime fallback.
  * Auto-selection uses OpenRouter when OPENROUTER_API_KEY is set and otherwise
  * falls back to the offline mock with a stderr notice, so a missing key is
  * never silent. An explicit live provider still fails closed without its key.
  */
-import { MockJev } from "./mock.ts";
+import { MockSystemOne } from "./mock.ts";
 import {
   QuestionValidationError,
   validateRequest,
@@ -14,7 +14,7 @@ import {
   type SystemOneResponse,
 } from "./types.ts";
 
-export type JevProvider = "mock" | "openrouter";
+export type SystemOneProvider = "mock" | "openrouter";
 
 const ENDPOINTS = {
   openrouter: "https://openrouter.ai/api/alpha/decisions",
@@ -33,18 +33,18 @@ const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_ATTEMPTS = 3;
 
 /** Caller-supplied USD prices; no assumed provider/model rates. */
-export interface JevPricing {
+export interface SystemOnePricing {
   inputPerMillion: number;
   outputPerMillion: number;
 }
 
-export type JevCost =
+export type SystemOneCost =
   | { amount: number; source: "reported" | "estimated" | "mock" }
   | { amount: null; source: "unknown" };
 
-export interface JevClientOptions {
-  /** Overrides test isolation, JEV_BACKEND, and automatic key-based selection. */
-  provider?: JevProvider;
+export interface SystemOneClientOptions {
+  /** Overrides test isolation, SYSTEMONE_BACKEND, and automatic key-based selection. */
+  provider?: SystemOneProvider;
   /** Requires opts.provider to explicitly name a live provider. */
   apiKey?: string;
   /** Full endpoint URL (not an origin). Redirects are refused. */
@@ -56,10 +56,10 @@ export interface JevClientOptions {
   /** Exponential backoff base, plus up to 20% jitter. Default: 500 ms; 0 is allowed. */
   retryDelayMs?: number;
   /** Used only when usage.cost is not a valid reported cost. Snapshotted at construction. */
-  pricing?: JevPricing;
+  pricing?: SystemOnePricing;
 }
 
-export interface JevRawExchange {
+export interface SystemOneRawExchange {
   /** Snapshot of the JSON sent; no credentials or headers. */
   request: SystemOneRequest;
   requestText: string;
@@ -70,15 +70,15 @@ export interface JevRawExchange {
 }
 
 export interface SystemOneResult extends SystemOneResponse {
-  raw: JevRawExchange;
+  raw: SystemOneRawExchange;
   meta: {
-    provider: JevProvider;
+    provider: SystemOneProvider;
     requestedModel: string;
     resolvedModel: string;
     elapsedMs: number;
     attempts: number;
     /** USD, or null when no trustworthy cost is available. */
-    cost: JevCost;
+    cost: SystemOneCost;
   };
 }
 
@@ -90,24 +90,30 @@ export class ContractError extends Error {
 }
 
 /** Live observation of every call — the web layer streams these to the UI. */
-export type JevEvent =
-  | { kind: "request"; provider: JevProvider; model: string; state: State; questions: Questions }
+export type SystemOneEvent =
+  | {
+      kind: "request";
+      provider: SystemOneProvider;
+      model: string;
+      state: State;
+      questions: Questions;
+    }
   | { kind: "response"; result: SystemOneResult };
 
-export class JevClient {
-  readonly provider: JevProvider;
+export class SystemOneClient {
+  readonly provider: SystemOneProvider;
   private readonly apiKey?: string;
   private readonly endpoint?: string;
-  private readonly mock = new MockJev();
+  private readonly mock = new MockSystemOne();
   private readonly model?: string;
   private readonly timeoutMs: number;
   private readonly retryDelayMs: number;
-  private readonly pricing?: JevPricing;
-  private listeners: ((event: JevEvent) => void)[] = [];
+  private readonly pricing?: SystemOnePricing;
+  private listeners: ((event: SystemOneEvent) => void)[] = [];
   /** Count of validated systemOne calls, for the demo's cost story. */
   calls = 0;
 
-  constructor(opts: JevClientOptions = {}) {
+  constructor(opts: SystemOneClientOptions = {}) {
     if (opts.apiKey !== undefined && opts.provider !== "openrouter") {
       throw new Error("apiKey requires an explicit live opts.provider (openrouter).");
     }
@@ -151,14 +157,14 @@ export class JevClient {
   }
 
   /** Observe every request and response this client makes. */
-  on(listener: (event: JevEvent) => void): () => void {
+  on(listener: (event: SystemOneEvent) => void): () => void {
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
-  private emit(event: JevEvent): void {
+  private emit(event: SystemOneEvent): void {
     for (const listener of this.listeners) listener(event);
   }
 
@@ -204,7 +210,7 @@ export class JevClient {
 
     const deadline = new AbortController();
     const timer = setTimeout(() => {
-      deadline.abort(new DOMException("Jev request timed out.", "TimeoutError"));
+      deadline.abort(new DOMException("System One request timed out.", "TimeoutError"));
     }, this.timeoutMs);
     const signal = opts.signal ? AbortSignal.any([deadline.signal, opts.signal]) : deadline.signal;
     try {
@@ -259,28 +265,29 @@ export class JevClient {
   }
 }
 
-function selectProvider(explicit?: JevProvider): JevProvider {
+function selectProvider(explicit?: SystemOneProvider): SystemOneProvider {
   // node:test cannot accidentally use ambient live credentials/overrides.
-  // Explicit opts.provider or the existing JEV_LIVE=1 opt-in bypass isolation.
-  const isolated = process.env.NODE_TEST_CONTEXT && process.env.JEV_LIVE !== "1";
-  const selected = explicit ?? (isolated ? "mock" : process.env.JEV_BACKEND?.trim() || undefined);
+  // Explicit opts.provider or the existing SYSTEMONE_LIVE=1 opt-in bypass isolation.
+  const isolated = process.env.NODE_TEST_CONTEXT && process.env.SYSTEMONE_LIVE !== "1";
+  const selected =
+    explicit ?? (isolated ? "mock" : process.env.SYSTEMONE_BACKEND?.trim() || undefined);
   if (selected !== undefined) {
     if (selected === "mock" || selected === "openrouter") return selected;
-    throw new Error(`Unknown JEV backend "${selected}"; use mock or openrouter.`);
+    throw new Error(`Unknown System One backend "${selected}"; use mock or openrouter.`);
   }
   if (process.env.OPENROUTER_API_KEY?.trim()) return "openrouter";
   // Never silently degrade: announce the offline fallback on stderr.
   console.error(
-    "Jev: OPENROUTER_API_KEY is not set; using the offline mock. Set the key for live answers.",
+    "System One: OPENROUTER_API_KEY is not set; using the offline mock. Set the key for live answers.",
   );
   return "mock";
 }
 
 function resultCost(
   response: SystemOneResponse,
-  provider: JevProvider,
-  pricing?: JevPricing,
-): JevCost {
+  provider: SystemOneProvider,
+  pricing?: SystemOnePricing,
+): SystemOneCost {
   if (provider === "mock") return { amount: 0, source: "mock" };
   if (isNonnegative(response.usage.cost))
     return { amount: response.usage.cost, source: "reported" };
@@ -294,12 +301,12 @@ function resultCost(
 }
 
 function withMeta(
-  raw: JevRawExchange,
-  provider: JevProvider,
+  raw: SystemOneRawExchange,
+  provider: SystemOneProvider,
   requestedModel: string,
   started: number,
   attempts: number,
-  pricing?: JevPricing,
+  pricing?: SystemOnePricing,
 ): SystemOneResult {
   return {
     // Separate nested answers/usage from raw; enrichment never edits provider data.
@@ -421,18 +428,18 @@ export function validateResponse(
   }
 }
 
-let _shared: JevClient | undefined;
+let _shared: SystemOneClient | undefined;
 
 /** Lazily constructed; provider and credentials resolve only on first use. */
-export function sharedJev(): JevClient {
-  if (!_shared) _shared = new JevClient();
+export function sharedSystemOne(): SystemOneClient {
+  if (!_shared) _shared = new SystemOneClient();
   return _shared;
 }
 
-/** Shared client for every level. Use JEV_BACKEND=mock for an offline demo. */
-export const jev = new Proxy({} as JevClient, {
+/** Shared client for every level. Use SYSTEMONE_BACKEND=mock for an offline demo. */
+export const systemOneClient = new Proxy({} as SystemOneClient, {
   get(_target, prop) {
-    const value = (sharedJev() as unknown as Record<string | symbol, unknown>)[prop];
-    return typeof value === "function" ? value.bind(sharedJev()) : value;
+    const value = (sharedSystemOne() as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof value === "function" ? value.bind(sharedSystemOne()) : value;
   },
 });

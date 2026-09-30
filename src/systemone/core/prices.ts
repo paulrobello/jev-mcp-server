@@ -1,5 +1,5 @@
 /**
- * The lab's one assumed price, and the discipline for costing a Jev call.
+ * The lab's one assumed price, and the discipline for costing a System One call.
  *
  * Every fallback estimate imports JEV_INPUT_USD_PER_M; the literal lives here and nowhere
  * else. A cost that crossed a process boundary (SSE event, session entry, usage object) is
@@ -11,12 +11,12 @@
 export const JEV_INPUT_USD_PER_M = 0.042;
 
 /** The labels meta.cost carries. "mock" covers the offline backend's known-zero answers. */
-export type JevCostSource = "reported" | "estimated" | "mock" | "unknown";
+export type SystemOneCostSource = "reported" | "estimated" | "mock" | "unknown";
 
 export interface LabelledCost {
   /** USD, or null when no trustworthy cost exists. Never a string. */
   amount: number | null;
-  source: JevCostSource;
+  source: SystemOneCostSource;
 }
 
 /** Money is a finite nonnegative number. Anything else — a string, NaN, negative — is never summed. */

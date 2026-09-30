@@ -1,12 +1,12 @@
 /**
- * Level 10, option A: ask_jev on any content.
+ * Level 10, option A: ask_systemone on any content.
  * The general form. The agent passes its own state, paths for code to read, a command for code to run, and its question block. Code assembles one state, validates, and makes one call. The agent never receives the files or the output, only the answers.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import type { Answer, State } from "../../core/types.ts";
 import { type Decide, parseQuestions } from "../../decide.ts";
 
-// Re-exported so the ask_jev extension keeps importing it from the level's surface.
+// Re-exported so the ask_systemone extension keeps importing it from the level's surface.
 export { parseQuestions };
 
 export interface AskResult {
@@ -30,11 +30,11 @@ export function parseState(raw: string | Record<string, unknown>): State {
   return raw;
 }
 
-/** A: any state, any questions, one call. Empty state is refused; Jev cannot judge nothing. */
-export async function askJev(
+/** A: any state, any questions, one call. Empty state is refused; System One cannot judge nothing. */
+export async function askSystemOne(
   rawState: string | Record<string, unknown>,
   questionsJson: string,
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<AskResult> {
   const state = parseState(rawState);
   if (typeof state === "string" ? !state.trim() : !state || Object.keys(state).length === 0)

@@ -1,8 +1,8 @@
 /**
- * Level 8, option C: ask_jev_file_score.
+ * Level 8, option C: ask_systemone_file_score.
  * One file, one scale the agent writes, low to high. "How risky is a refactor of this file?" comes back as a position on the agent's own levels.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import { score } from "../../core/helpers.ts";
 import type { ScoreAnswer } from "../../core/types.ts";
 import type { Decide } from "../../decide.ts";
@@ -24,7 +24,7 @@ export async function askFileScore(
   question: string,
   levels: string[],
   cwd: string,
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<FileScore> {
   const state = await readFileState(path, cwd);
   const { answers, usage } = await decide(state, { answer: score(question, levels) });

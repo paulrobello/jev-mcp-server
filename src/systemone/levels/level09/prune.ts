@@ -58,7 +58,7 @@ export async function expandPatterns(
   return [...out].sort();
 }
 
-/** What survives, and why each dropped file dropped. Nothing here calls Jev. */
+/** What survives, and why each dropped file dropped. Nothing here calls System One. */
 export async function pruneFiles(
   paths: string[],
   cwd: string,

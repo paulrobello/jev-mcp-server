@@ -1,11 +1,11 @@
 /**
  * Level 6, option B: write gate.
- * Before any write or edit: paths are checked in code, content is judged by Jev. Outside the repo blocks without a call. Inside, one call asks whether the file or its content holds credentials.
+ * Before any write or edit: paths are checked in code, content is judged by System One. Outside the repo blocks without a call. Inside, one call asks whether the file or its content holds credentials.
  */
 import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import { choice, noul } from "../../core/helpers.ts";
 import type { ChoiceAnswer, NoulAnswer, Questions, State } from "../../core/types.ts";
 import type { Decide } from "../../decide.ts";
@@ -45,7 +45,7 @@ function realpathish(p: string): string {
   }
 }
 
-/** Paths stay in code: anything that resolves outside the repo is blocked before Jev is asked. `~` expands and symlinks resolve, so neither can pose as inside. */
+/** Paths stay in code: anything that resolves outside the repo is blocked before System One is asked. `~` expands and symlinks resolve, so neither can pose as inside. */
 export function insideRepo(path: string, repo: string): boolean {
   const tilde = path.startsWith("~") ? path.replace(/^~/, homedir()) : path;
   const root = realpathish(repo);
@@ -54,7 +54,7 @@ export function insideRepo(path: string, repo: string): boolean {
   return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
 }
 
-/** Deterministic credential patterns. The scan sees the FULL content; truncation only limits what Jev is asked. */
+/** Deterministic credential patterns. The scan sees the FULL content; truncation only limits what System One is asked. */
 const SECRET_PATTERNS: [RegExp, string][] = [
   [/sk-(or-v1-)?[A-Za-z0-9_-]{20,}/, "API key"],
   [/AKIA[0-9A-Z]{16}/, "AWS key"],
@@ -63,7 +63,7 @@ const SECRET_PATTERNS: [RegExp, string][] = [
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, "private key"],
 ];
 
-/** Returns the kind of the first credential-looking string, or null. No Jev call needed for these. */
+/** Returns the kind of the first credential-looking string, or null. No System One call needed for these. */
 export function findSecret(content: string): string | null {
   for (const [pattern, kind] of SECRET_PATTERNS) if (pattern.test(content)) return kind;
   return null;
@@ -91,12 +91,12 @@ export function gateWrite(
   };
 }
 
-/** B: code decides on the path and the obvious secrets, Jev on the rest of the content. Content is trimmed for the call, but the pattern scan sees all of it. */
+/** B: code decides on the path and the obvious secrets, System One on the rest of the content. Content is trimmed for the call, but the pattern scan sees all of it. */
 export async function gateWriteCall(
   path: string,
   content: string,
   repo: string,
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<GateDecision> {
   const secret = findSecret(content);
   if (secret)

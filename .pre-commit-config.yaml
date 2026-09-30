@@ -1,4 +1,4 @@
-# Pre-commit hooks for jev-mcp-server
+# Pre-commit hooks for systemone-mcp-server
 # Install: pre-commit install
 # Run manually: make pre-commit
 repos:

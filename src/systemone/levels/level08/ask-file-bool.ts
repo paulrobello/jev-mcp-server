@@ -1,8 +1,8 @@
 /**
- * Level 8, option A: ask_jev_file_bool.
+ * Level 8, option A: ask_systemone_file_bool.
  * One file, one yes or no question, flat parameters. The agent asks "does src/auth/session.ts validate tokens?" and gets a Noul back without the file ever entering its context.
  */
-import { jev } from "../../core/client.ts";
+import { systemOneClient } from "../../core/client.ts";
 import { noul } from "../../core/helpers.ts";
 import type { NoulAnswer } from "../../core/types.ts";
 import type { Decide } from "../../decide.ts";
@@ -21,7 +21,7 @@ export async function askFileBool(
   question: string,
   cwd: string,
   criteria: { yes?: string; no?: string } = {},
-  decide: Decide = (s, q) => jev.systemOne(s, q),
+  decide: Decide = (s, q) => systemOneClient.systemOne(s, q),
 ): Promise<FileBool> {
   const state = await readFileState(path, cwd);
   const questions = {

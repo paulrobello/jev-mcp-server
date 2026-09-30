@@ -1,5 +1,5 @@
 /**
- * System One API types — the exact wire contract for Jev.
+ * System One API types — the exact wire contract.
  *
  * Live endpoint: POST https://openrouter.ai/api/alpha/decisions; the offline
  * mock speaks the same shape. You send a `state` and a map of typed

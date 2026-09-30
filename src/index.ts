@@ -1,14 +1,15 @@
 /**
- * jev-mcp-server — the Jev decision tools as MCP tools for Claude Code.
+ * systemone-mcp-server — the System One decision tools as MCP tools for Claude Code.
  *
  * Six tools, ported one-to-one from the ten-levels-of-jev levels 8-10 extensions:
- *   ask_jev / ask_jev_files / pick_first_file / ask_jev_file_bool / _choice / _score
- * Files are read by code and judged by Jev; nothing enters the agent's context.
- * Claude Code has no pi hooks here, so ask_jev's `command` runs through the level 6
+ *   ask_systemone / ask_systemone_files / pick_first_file / ask_systemone_file_bool / _choice / _score
+ * Files are read by code and judged by System One; nothing enters the agent's context.
+ * Claude Code has no pi hooks here, so ask_systemone's `command` runs through the level 6
  * bash gate inside the tool (fail closed after ~5s) instead of a harness hook.
  *
- * The `src/jev/` tree is vendored from ten-levels-of-jev (apps/ten-levels, commit
- * 2b584a5) — re-copy from there to update. Run: bun src/index.ts (stdio).
+ * The `src/systemone/` tree is vendored from ten-levels-of-jev (apps/ten-levels, commit
+ * 2b584a5) with its upstream names renamed to System One — to update, re-copy from there and
+ * reapply the rename. Run: bun src/index.ts (stdio).
  */
 import { exec } from "node:child_process";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -16,17 +17,21 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import type { CallToolResult, ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { parseQuestions } from "./jev/decide.ts";
-import { BLOCK_NOTICE, gateBashCommand } from "./jev/levels/level06/index.ts";
+import { parseQuestions } from "./systemone/decide.ts";
+import { BLOCK_NOTICE, gateBashCommand } from "./systemone/levels/level06/index.ts";
 import {
   askFileBool,
   askFileChoice,
   askFileScore,
   type FileStateError,
-} from "./jev/levels/level08/index.ts";
-import { askFiles, pickFirstFile } from "./jev/levels/level09/index.ts";
-import { AskStateError, assembleState, type CommandOutput } from "./jev/levels/level10/index.ts";
-import { decide, withGuardTimeout } from "./jev.ts";
+} from "./systemone/levels/level08/index.ts";
+import { askFiles, pickFirstFile } from "./systemone/levels/level09/index.ts";
+import {
+  AskStateError,
+  assembleState,
+  type CommandOutput,
+} from "./systemone/levels/level10/index.ts";
+import { decide, withGuardTimeout } from "./systemone.ts";
 
 const COMMAND_TIMEOUT_MS = 60_000;
 const MAX_OUTPUT_CHARS = 200_000;
@@ -60,7 +65,7 @@ const fail = (err: unknown): CallToolResult => ({
   isError: true,
 });
 
-/** Run a command for ask_jev's state. Output is captured, never streamed to the agent. */
+/** Run a command for ask_systemone's state. Output is captured, never streamed to the agent. */
 function runCommand(command: string, cwd: string): Promise<CommandOutput> {
   return new Promise((resolve, reject) => {
     exec(
@@ -91,7 +96,7 @@ function runCommand(command: string, cwd: string): Promise<CommandOutput> {
   });
 }
 
-/** The bash gate ask_jev commands pass through: irreversible or destructive commands refuse. */
+/** The bash gate ask_systemone commands pass through: irreversible or destructive commands refuse. */
 async function gatedRun(
   command: string,
   cwd: string,
@@ -99,19 +104,19 @@ async function gatedRun(
 ): Promise<CommandOutput> {
   const gate = await withGuardTimeout((s) =>
     gateBashCommand(command, cwd, (st, q) =>
-      decide("ask_jev command gate", st, q, {}, { signal: s ?? signal }),
+      decide("ask_systemone command gate", st, q, {}, { signal: s ?? signal }),
     ),
   );
   if (gate.block) {
     throw new AskStateError(
-      `ask_jev: the command was refused by the bash gate: ${gate.reason}. ${BLOCK_NOTICE} ask_jev commands should only read.`,
+      `ask_systemone: the command was refused by the bash gate: ${gate.reason}. ${BLOCK_NOTICE} ask_systemone commands should only read.`,
     );
   }
   return runCommand(command, cwd);
 }
 
 export function buildServer(): McpServer {
-  const server = new McpServer({ name: "jev-mcp-server", version: "1.0.0" });
+  const server = new McpServer({ name: "systemone-mcp-server", version: "1.0.0" });
   const cwd = () => process.cwd();
   const R: ToolAnnotations = {
     readOnlyHint: true,
@@ -139,13 +144,13 @@ export function buildServer(): McpServer {
   ) => void;
 
   register(
-    "ask_jev",
+    "ask_systemone",
     {
-      title: "Ask Jev",
+      title: "Ask System One",
       description:
-        "One Jev call over an assembled situation: your own short state, up to 20 files code reads for you, and/or one gated command's output. " +
+        "One System One call over an assembled situation: your own short state, up to 20 files code reads for you, and/or one gated command's output. " +
         "Returns typed answers (noul probability, choice, score) without any of the content entering your context. " +
-        "Files over Jev's budget are skipped with a reason, never truncated; an over-budget situation is refused with a suggested split. " +
+        "Files over System One's budget are skipped with a reason, never truncated; an over-budget situation is refused with a suggested split. " +
         "Prefer this over reasoning out a classification, risk score, or yes/no with confidence yourself.",
       inputSchema: shape({
         questions_json: z
@@ -178,7 +183,7 @@ export function buildServer(): McpServer {
           cwd(),
           (c, d) => gatedRun(c, d, extra.signal),
         );
-        const result = await decide("ask_jev", state, questions, { summary });
+        const result = await decide("ask_systemone", state, questions, { summary });
         return ok({
           answers: result.answers,
           state_summary: summary,
@@ -193,12 +198,12 @@ export function buildServer(): McpServer {
   );
 
   register(
-    "ask_jev_files",
+    "ask_systemone_files",
     {
-      title: "Ask Jev about many files",
+      title: "Ask System One about many files",
       description:
         "Ask the same typed questions of many files at once without reading any of them. Code expands globs and directories, " +
-        "drops node_modules, .git, binaries, and files over the budget, caps the list at 255, then makes one Jev call per file in parallel. " +
+        "drops node_modules, .git, binaries, and files over the budget, caps the list at 255, then makes one System One call per file in parallel. " +
         `Returns { results: [{ path, answers }], skipped: [{ path, reason }], calls }. ${QUESTION_SCHEMA} ` +
         "Use read when you need a file's code; use grep for exact strings.",
       inputSchema: shape({
@@ -221,7 +226,7 @@ export function buildServer(): McpServer {
           recursive: p.recursive ?? false,
           decide: (s, q) =>
             decide(
-              "ask_jev_files",
+              "ask_systemone_files",
               s,
               q,
               { path: (s as { path?: string }).path },
@@ -240,7 +245,7 @@ export function buildServer(): McpServer {
     {
       title: "Pick the file to open first",
       description:
-        "After ask_jev_files, choose which of a list of files to open first for a goal. One Choice keyed by path, so the pick is always a real file. " +
+        "After ask_systemone_files, choose which of a list of files to open first for a goal. One Choice keyed by path, so the pick is always a real file. " +
         "Returns { path | null, confidence, probabilities }. Pass a short note per path if you have one, for example the answers you already got.",
       inputSchema: shape({
         question: z
@@ -268,9 +273,9 @@ export function buildServer(): McpServer {
   );
 
   register(
-    "ask_jev_file_bool",
+    "ask_systemone_file_bool",
     {
-      title: "Ask Jev about a file, yes or no",
+      title: "Ask System One about a file, yes or no",
       description: `Yes or no about one file. Returns { path, answer, noul } where noul is the probability of yes, 0 to 1. ${WHEN}`,
       inputSchema: shape({
         path: z.string().describe("File path, relative to the repo"),
@@ -288,7 +293,7 @@ export function buildServer(): McpServer {
       try {
         return ok(
           await askFileBool(p.path, p.question, cwd(), { yes: p.yes, no: p.no }, (s, q) =>
-            decide("ask_jev_file_bool", s, q, { path: p.path }, { signal: extra.signal }),
+            decide("ask_systemone_file_bool", s, q, { path: p.path }, { signal: extra.signal }),
           ),
         );
       } catch (err) {
@@ -298,9 +303,9 @@ export function buildServer(): McpServer {
   );
 
   register(
-    "ask_jev_file_choice",
+    "ask_systemone_file_choice",
     {
-      title: "Ask Jev about a file, pick one",
+      title: "Ask System One about a file, pick one",
       description: `Pick one option about one file. Returns { path, choice, confidence, probabilities }. The choice is always one of your options; an "other" option is added if you leave none. ${WHEN}`,
       inputSchema: shape({
         path: z.string().describe("File path, relative to the repo"),
@@ -315,7 +320,7 @@ export function buildServer(): McpServer {
       try {
         return ok(
           await askFileChoice(p.path, p.question, p.options, cwd(), (s, q) =>
-            decide("ask_jev_file_choice", s, q, { path: p.path }, { signal: extra.signal }),
+            decide("ask_systemone_file_choice", s, q, { path: p.path }, { signal: extra.signal }),
           ),
         );
       } catch (err) {
@@ -325,9 +330,9 @@ export function buildServer(): McpServer {
   );
 
   register(
-    "ask_jev_file_score",
+    "ask_systemone_file_score",
     {
-      title: "Ask Jev about a file, on a scale",
+      title: "Ask System One about a file, on a scale",
       description: `A position on a scale you define, about one file. Returns { path, score, top, nearest, confidence, legend }. Levels are ordered low to high, two to ten of them, each a described situation. ${WHEN}`,
       inputSchema: shape({
         path: z.string().describe("File path, relative to the repo"),
@@ -348,7 +353,7 @@ export function buildServer(): McpServer {
       try {
         return ok(
           await askFileScore(p.path, p.question, p.levels, cwd(), (s, q) =>
-            decide("ask_jev_file_score", s, q, { path: p.path }, { signal: extra.signal }),
+            decide("ask_systemone_file_score", s, q, { path: p.path }, { signal: extra.signal }),
           ),
         );
       } catch (err) {
@@ -363,5 +368,5 @@ export function buildServer(): McpServer {
 if (import.meta.main) {
   const server = buildServer();
   await server.connect(new StdioServerTransport());
-  process.stderr.write("jev-mcp-server: ready (stdio)\n");
+  process.stderr.write("systemone-mcp-server: ready (stdio)\n");
 }
