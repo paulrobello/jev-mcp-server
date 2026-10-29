@@ -19,12 +19,7 @@ import type { CallToolResult, ToolAnnotations } from "@modelcontextprotocol/sdk/
 import { z } from "zod";
 import { parseQuestions } from "./systemone/decide.ts";
 import { BLOCK_NOTICE, gateBashCommand } from "./systemone/levels/level06/index.ts";
-import {
-  askFileBool,
-  askFileChoice,
-  askFileScore,
-  type FileStateError,
-} from "./systemone/levels/level08/index.ts";
+import { askFileBool, askFileChoice, askFileScore } from "./systemone/levels/level08/index.ts";
 import { askFiles, pickFirstFile } from "./systemone/levels/level09/index.ts";
 import {
   AskStateError,
@@ -311,7 +306,7 @@ export function buildServer(): McpServer {
         path: z.string().describe("File path, relative to the repo"),
         question: z.string().describe("The question, for example: Which layer is `content`?"),
         options: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .describe("Option name to a one line description of when it applies. Up to 255."),
       }),
       annotations: R,

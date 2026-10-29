@@ -1,4 +1,5 @@
 ---
+
 name: ask-systemone
 description: Use when a task needs a judgment about files or code without reading them into context — "ask System One about these files", classifying files, scoring risk or complexity, yes/no with confidence, picking which file to open first, triaging a directory or glob ("which of these files handles billing", "does this file validate tokens", "rank these by refactor risk"). Triggers on ask_systemone, ask_systemone_files, ask_systemone_file_bool/choice/score, pick_first_file, "ask System One" about a file or directory, System One MCP tools. Not for sorting piles of emails, tickets, or pasted text (that is the systemone skill) and not for exact string lookups (grep).
 ---
@@ -9,14 +10,14 @@ The `systemone-mcp-server` MCP tools ask System One (TypeSafe's typed-question d
 
 ## Which tool
 
-| Need | Tool |
-|---|---|
-| Yes/no about one file, with probability | `ask_systemone_file_bool(path, question, yes?, no?)` |
-| Pick one option about one file | `ask_systemone_file_choice(path, question, options)` |
-| Position on a 2–10 level scale (risk, complexity) | `ask_systemone_file_score(path, question, levels)` |
-| Same questions over many files (globs, dirs, up to 255) | `ask_systemone_files(paths_or_globs, questions_json, recursive?)` |
-| Which file to open first after triage | `pick_first_file(question, candidates)` |
-| One situation: short state + up to 20 files + one gated read-only command | `ask_systemone(questions_json, state?, paths?, command?)` |
+| Need                                                                      | Tool                                                              |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Yes/no about one file, with probability                                   | `ask_systemone_file_bool(path, question, yes?, no?)`              |
+| Pick one option about one file                                            | `ask_systemone_file_choice(path, question, options)`              |
+| Position on a 2–10 level scale (risk, complexity)                         | `ask_systemone_file_score(path, question, levels)`                |
+| Same questions over many files (globs, dirs, up to 255)                   | `ask_systemone_files(paths_or_globs, questions_json, recursive?)` |
+| Which file to open first after triage                                     | `pick_first_file(question, candidates)`                           |
+| One situation: short state + up to 20 files + one gated read-only command | `ask_systemone(questions_json, state?, paths?, command?)`         |
 
 ## How to write questions
 
